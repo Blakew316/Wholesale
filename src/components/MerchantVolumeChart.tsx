@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, CSSProperties } from "react";
 import Papa from "papaparse";
 import {
   BarChart,
@@ -50,6 +50,169 @@ function formatVolume(value: number): string {
   return `$${value}`;
 }
 
+const styles: Record<string, CSSProperties> = {
+  wrapper: {
+    maxWidth: 1100,
+    margin: "0 auto",
+    padding: 24,
+    display: "flex",
+    flexDirection: "column",
+    gap: 24,
+  },
+  title: {
+    fontSize: 28,
+    fontWeight: 700,
+    color: "#111827",
+    letterSpacing: "-0.02em",
+  },
+  subtitle: {
+    marginTop: 4,
+    fontSize: 14,
+    color: "#6b7280",
+  },
+  dropzoneBase: {
+    borderRadius: 12,
+    border: "2px dashed #d1d5db",
+    padding: 24,
+    textAlign: "center" as const,
+    backgroundColor: "#fff",
+    transition: "border-color 0.2s, background-color 0.2s",
+    cursor: "pointer",
+  },
+  dropzoneActive: {
+    borderColor: "#2563eb",
+    backgroundColor: "#eff6ff",
+  },
+  dropzoneContent: {
+    display: "flex",
+    flexDirection: "column" as const,
+    alignItems: "center",
+    gap: 8,
+  },
+  uploadBtn: {
+    background: "none",
+    border: "none",
+    fontWeight: 600,
+    color: "#2563eb",
+    cursor: "pointer",
+    fontSize: 14,
+  },
+  uploadHint: {
+    fontSize: 12,
+    color: "#9ca3af",
+  },
+  msgSuccess: {
+    borderRadius: 8,
+    padding: "12px 16px",
+    fontSize: 14,
+    backgroundColor: "#f0fdf4",
+    color: "#15803d",
+  },
+  msgError: {
+    borderRadius: 8,
+    padding: "12px 16px",
+    fontSize: 14,
+    backgroundColor: "#fef2f2",
+    color: "#b91c1c",
+  },
+  card: {
+    borderRadius: 12,
+    border: "1px solid #e5e7eb",
+    backgroundColor: "#fff",
+    padding: 24,
+    boxShadow: "0 1px 2px rgba(0,0,0,0.05)",
+  },
+  cardTitle: {
+    fontSize: 18,
+    fontWeight: 600,
+    color: "#1f2937",
+    marginBottom: 16,
+  },
+  chartContainer: {
+    height: 500,
+    width: "100%",
+  },
+  tableCard: {
+    borderRadius: 12,
+    border: "1px solid #e5e7eb",
+    backgroundColor: "#fff",
+    boxShadow: "0 1px 2px rgba(0,0,0,0.05)",
+    overflow: "hidden",
+  },
+  tableHeader: {
+    padding: "16px 24px",
+    borderBottom: "1px solid #f3f4f6",
+  },
+  table: {
+    width: "100%",
+    borderCollapse: "collapse" as const,
+  },
+  th: {
+    padding: "12px 24px",
+    textAlign: "left" as const,
+    fontSize: 11,
+    fontWeight: 600,
+    textTransform: "uppercase" as const,
+    letterSpacing: "0.05em",
+    color: "#6b7280",
+    backgroundColor: "#f9fafb",
+    borderBottom: "1px solid #f3f4f6",
+  },
+  thRight: {
+    padding: "12px 24px",
+    textAlign: "right" as const,
+    fontSize: 11,
+    fontWeight: 600,
+    textTransform: "uppercase" as const,
+    letterSpacing: "0.05em",
+    color: "#6b7280",
+    backgroundColor: "#f9fafb",
+    borderBottom: "1px solid #f3f4f6",
+  },
+  td: {
+    padding: "12px 24px",
+    borderBottom: "1px solid #f9fafb",
+  },
+  rankBadge: {
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
+    height: 28,
+    width: 28,
+    borderRadius: "50%",
+    backgroundColor: "#dbeafe",
+    fontSize: 12,
+    fontWeight: 700,
+    color: "#1d4ed8",
+  },
+  merchantName: {
+    fontWeight: 500,
+    color: "#111827",
+  },
+  volumeCell: {
+    textAlign: "right" as const,
+    fontFamily: "monospace",
+    color: "#374151",
+  },
+  tooltipBox: {
+    borderRadius: 8,
+    border: "1px solid #e5e7eb",
+    backgroundColor: "#fff",
+    padding: "12px 16px",
+    boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
+  },
+  tooltipName: {
+    fontSize: 13,
+    fontWeight: 600,
+    color: "#111827",
+  },
+  tooltipValue: {
+    fontSize: 18,
+    fontWeight: 700,
+    color: "#2563eb",
+  },
+};
+
 function CustomTooltip({
   active,
   payload,
@@ -60,13 +223,9 @@ function CustomTooltip({
   if (!active || !payload?.length) return null;
   const data = payload[0].payload;
   return (
-    <div className="rounded-lg border border-gray-200 bg-white px-4 py-3 shadow-lg">
-      <p className="text-sm font-semibold text-gray-900">
-        {data.merchantName}
-      </p>
-      <p className="text-lg font-bold text-blue-600">
-        ${data.volume.toLocaleString()}
-      </p>
+    <div style={styles.tooltipBox}>
+      <p style={styles.tooltipName}>{data.merchantName}</p>
+      <p style={styles.tooltipValue}>${data.volume.toLocaleString()}</p>
     </div>
   );
 }
@@ -164,14 +323,17 @@ export default function MerchantVolumeChart() {
     }
   };
 
+  const isError =
+    uploadMessage.toLowerCase().includes("error") ||
+    uploadMessage.toLowerCase().includes("could not") ||
+    uploadMessage.toLowerCase().includes("no valid");
+
   return (
-    <div className="mx-auto max-w-6xl space-y-6 p-6">
+    <div style={styles.wrapper}>
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold tracking-tight text-gray-900">
-          Merchant Processing Volume
-        </h1>
-        <p className="mt-1 text-gray-500">
+        <h1 style={styles.title}>Merchant Processing Volume</h1>
+        <p style={styles.subtitle}>
           Top 10 merchants ranked by current processing volume
         </p>
       </div>
@@ -184,18 +346,19 @@ export default function MerchantVolumeChart() {
         }}
         onDragLeave={() => setDragOver(false)}
         onDrop={handleDrop}
-        className={`rounded-xl border-2 border-dashed p-6 text-center transition-colors ${
-          dragOver
-            ? "border-blue-500 bg-blue-50"
-            : "border-gray-300 bg-white hover:border-gray-400"
-        }`}
+        onClick={() => fileInputRef.current?.click()}
+        style={{
+          ...styles.dropzoneBase,
+          ...(dragOver ? styles.dropzoneActive : {}),
+        }}
       >
-        <div className="flex flex-col items-center gap-2">
+        <div style={styles.dropzoneContent}>
           <svg
-            className="h-10 w-10 text-gray-400"
+            width="40"
+            height="40"
             fill="none"
             viewBox="0 0 24 24"
-            stroke="currentColor"
+            stroke="#9ca3af"
             strokeWidth={1.5}
           >
             <path
@@ -204,16 +367,13 @@ export default function MerchantVolumeChart() {
               d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5"
             />
           </svg>
-          <p className="text-sm text-gray-600">
-            <button
-              onClick={() => fileInputRef.current?.click()}
-              className="font-semibold text-blue-600 hover:text-blue-500"
-            >
+          <p style={{ fontSize: 14, color: "#4b5563" }}>
+            <span style={{ fontWeight: 600, color: "#2563eb" }}>
               Upload a CSV file
-            </button>{" "}
+            </span>{" "}
             or drag and drop
           </p>
-          <p className="text-xs text-gray-400">
+          <p style={styles.uploadHint}>
             CSV should have columns for merchant name and processing volume
           </p>
           <input
@@ -221,31 +381,21 @@ export default function MerchantVolumeChart() {
             type="file"
             accept=".csv"
             onChange={handleFileChange}
-            className="hidden"
+            style={{ display: "none" }}
           />
         </div>
       </div>
 
       {uploadMessage && (
-        <div
-          className={`rounded-lg px-4 py-3 text-sm ${
-            uploadMessage.toLowerCase().includes("error") ||
-            uploadMessage.toLowerCase().includes("could not") ||
-            uploadMessage.toLowerCase().includes("no valid")
-              ? "bg-red-50 text-red-700"
-              : "bg-green-50 text-green-700"
-          }`}
-        >
+        <div style={isError ? styles.msgError : styles.msgSuccess}>
           {uploadMessage}
         </div>
       )}
 
       {/* Chart */}
-      <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-        <h2 className="mb-4 text-lg font-semibold text-gray-800">
-          Top 10 Merchants by Processing Volume
-        </h2>
-        <div className="h-[500px] w-full">
+      <div style={styles.card}>
+        <h2 style={styles.cardTitle}>Top 10 Merchants by Processing Volume</h2>
+        <div style={styles.chartContainer}>
           <ResponsiveContainer width="100%" height="100%">
             <BarChart
               data={data}
@@ -279,43 +429,36 @@ export default function MerchantVolumeChart() {
       </div>
 
       {/* Data Table */}
-      <div className="rounded-xl border border-gray-200 bg-white shadow-sm">
-        <div className="px-6 py-4 border-b border-gray-100">
-          <h2 className="text-lg font-semibold text-gray-800">
+      <div style={styles.tableCard}>
+        <div style={styles.tableHeader}>
+          <h2 style={{ fontSize: 18, fontWeight: 600, color: "#1f2937" }}>
             Merchant Details
           </h2>
         </div>
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr className="border-b border-gray-100 bg-gray-50 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                <th className="px-6 py-3">Rank</th>
-                <th className="px-6 py-3">Business Name</th>
-                <th className="px-6 py-3 text-right">Processing Volume</th>
+        <table style={styles.table}>
+          <thead>
+            <tr>
+              <th style={styles.th}>Rank</th>
+              <th style={styles.th}>Business Name</th>
+              <th style={styles.thRight}>Processing Volume</th>
+            </tr>
+          </thead>
+          <tbody>
+            {data.map((merchant, idx) => (
+              <tr key={merchant.merchantName}>
+                <td style={styles.td}>
+                  <span style={styles.rankBadge}>{idx + 1}</span>
+                </td>
+                <td style={{ ...styles.td, ...styles.merchantName }}>
+                  {merchant.merchantName}
+                </td>
+                <td style={{ ...styles.td, ...styles.volumeCell }}>
+                  ${merchant.volume.toLocaleString()}
+                </td>
               </tr>
-            </thead>
-            <tbody>
-              {data.map((merchant, idx) => (
-                <tr
-                  key={merchant.merchantName}
-                  className="border-b border-gray-50 hover:bg-gray-50 transition-colors"
-                >
-                  <td className="px-6 py-3">
-                    <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-blue-100 text-xs font-bold text-blue-700">
-                      {idx + 1}
-                    </span>
-                  </td>
-                  <td className="px-6 py-3 font-medium text-gray-900">
-                    {merchant.merchantName}
-                  </td>
-                  <td className="px-6 py-3 text-right font-mono text-gray-700">
-                    ${merchant.volume.toLocaleString()}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+            ))}
+          </tbody>
+        </table>
       </div>
     </div>
   );
